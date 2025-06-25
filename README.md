@@ -2,7 +2,7 @@ Dependencies:
 
   python 3.7 <
   
-  teelthon 1.4 < 
+  telethon 1.4 < 
   
     cryptg 0.4 <
     
