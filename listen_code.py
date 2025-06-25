@@ -9,7 +9,6 @@ from telethon import TelegramClient
 from telethon.errors.common import AuthKeyNotFound
 from telethon.events.newmessage import NewMessage
 
-
 class MyTelegramClient(TelegramClient):
     def __init__(self, *args, session_file = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,10 +48,8 @@ class MyTelegramClient(TelegramClient):
         
         return not task.cancelled()
     
-
 async def start(session_file, json_data, proxy):
     try:
-        
         async with MyTelegramClient(
                     session_file[1],
                     json_data['app_id'],
@@ -89,14 +86,11 @@ async def start(session_file, json_data, proxy):
                     except Exception as ex:
                         print(f"({ex.__class__.__name__}) {ex}")
                     
-                    
                 if not await client.tl_connection(15):
                     print(f"[{session_file[0]}] Нет связи с телеграм")
                     
                 elif await client.is_user_authorized():
                     print(f"[{session_file[0]}] Подключился успешно. Жду сообщение с кодом")
-                    
-                    await get_event_loop().run_in_executor(None, input, "Нажмите Enter для завершени работы...\n")
                     
                 else:
                     print(f"[{session_file[0]}] Сессия не активна или забанена")
@@ -104,8 +98,6 @@ async def start(session_file, json_data, proxy):
             except Exception as ex:
                 print(f"({ex.__class__.__name__}) {ex}")
                 
-        
-        
     except Exception as ex:
         print(f"({ex.__class__.__name__}) {ex}")
         
@@ -162,7 +154,8 @@ if __name__ == '__main__':
                         print(f"{i} - {session_files[i][0]}")
                         
                     session_file = session_files[int(input("Выберите сессию >"))]
-                    json_file = session_file[1].replace("session", "json")
+                    json_file = session_file[1].replace(".session", ".json")
+                    print(json_file)
                     if path.isfile(json_file):
                         with open(json_file, 'r') as file:
                             json_data = loads(file.read())
@@ -179,5 +172,3 @@ if __name__ == '__main__':
         print(f"({ex.__class__.__name__}) {ex}")
         
 input("Скрипт завершён")
-    
-    
