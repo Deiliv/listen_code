@@ -149,13 +149,11 @@ if __name__ == '__main__':
             while True:
                 print("Выберите сессию:")
                 try:
-                
                     for i in range(len(session_files)):
                         print(f"{i} - {session_files[i][0]}")
                         
                     session_file = session_files[int(input("Выберите сессию >"))]
                     json_file = session_file[1].replace(".session", ".json")
-                    print(json_file)
                     if path.isfile(json_file):
                         with open(json_file, 'r') as file:
                             json_data = loads(file.read())
