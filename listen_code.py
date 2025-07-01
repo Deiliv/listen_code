@@ -1,8 +1,7 @@
-
 from asyncio import sleep, create_task, new_event_loop, current_task, get_event_loop
 from datetime import datetime
 from json import loads
-from os import path, walk
+from os import path, walk, rename
 from random import choice
 from python_socks import ProxyType
 from telethon import TelegramClient
@@ -50,6 +49,7 @@ class MyTelegramClient(TelegramClient):
     
 async def start(session_file, json_data, proxy):
     try:
+        new_filename = None
         async with MyTelegramClient(
                     session_file[1],
                     json_data['app_id'],
@@ -62,9 +62,9 @@ async def start(session_file, json_data, proxy):
                     timeout = 19,
                     retry_delay = 3,
                     connection_retries = 2,
-                    use_ipv6 = True if proxy['ipv6'] == 'ipv6' else False,
-                    
-                    proxy = {
+                    use_ipv6 = True if proxy is not None and proxy['ipv6'] == 'ipv6' else False,
+                    proxy = None if proxy is None else 
+                        {
                         'proxy_type': ProxyType.SOCKS5 if proxy['type'] == 'socks5' else ProxyType.HTTP,
                         'addr': proxy['addr'],
                         'port': proxy['port'],
@@ -90,7 +90,19 @@ async def start(session_file, json_data, proxy):
                     print(f"[{session_file[0]}] Нет связи с телеграм")
                     
                 elif await client.is_user_authorized():
-                    print(f"[{session_file[0]}] Подключился успешно. Жду сообщение с кодом")
+                    print(f"[{session_file[0]}] Подключился успешно. Слушаю сообщения с кодом")
+                    
+                    me = await client.get_me()
+                    
+                    if me.phone not in session_file[0]:
+                        tmp_new_filename = session_file[0].replace(session_file[0], f"+{me.phone}.session")
+                        
+                        print(f"[{session_file[0]}] !!! Реальный номер +{me.phone} отличается от имени файла !!!")
+                        
+                        if input(f"[{session_file[0]}] По завершению работы переименовать файл в: {tmp_new_filename} (y|n) > ") == "y":
+                            new_filename = session_file[1].replace(session_file[0], f"+{me.phone}.session")
+                    
+                    await get_event_loop().run_in_executor(None, input, "Для завершения работы нажмите Enter")
                     
                 else:
                     print(f"[{session_file[0]}] Сессия не активна или забанена")
@@ -98,6 +110,19 @@ async def start(session_file, json_data, proxy):
             except Exception as ex:
                 print(f"({ex.__class__.__name__}) {ex}")
                 
+        if new_filename is not None:
+            if path.isfile(new_filename):
+                print(f"Файл уже существует {new_filename}")
+                
+            else:
+                print("Переименовываю файл .session")
+                rename(session_file[1], new_filename)
+            
+                new_json_file = new_filename.replace(".session", ".json")
+                if not path.isfile(new_json_file):
+                    print("Переименовываю файл .json")
+                    rename(session_file[1].replace(".session", ".json"), new_json_file)
+            
     except Exception as ex:
         print(f"({ex.__class__.__name__}) {ex}")
         
@@ -138,9 +163,9 @@ if __name__ == '__main__':
         session_files = find_all_session_files()
         
         if len(proxy_list) <= 0:
-            print("Нет прокси для работы")
+            print("!!!!  ПОДКЛЮЧЕНИЯ БУДУТ ПРОИЗВОДИТЬСЯ С ВАШЕГО РЕЛЬНОГО IP !!!")
             
-        elif len(session_files) <= 0:
+        if len(session_files) <= 0:
             print("Сессий не найдено")
         
         else:
@@ -150,7 +175,7 @@ if __name__ == '__main__':
                 print("Выберите сессию:")
                 try:
                     for i in range(len(session_files)):
-                        print(f"{i} - {session_files[i][0]}")
+                        print(f"{i+1} - {session_files[i][0]} ({session_files[i][1]})")
                         
                     session_file = session_files[int(input("Выберите сессию >"))]
                     json_file = session_file[1].replace(".session", ".json")
@@ -158,14 +183,18 @@ if __name__ == '__main__':
                         with open(json_file, 'r') as file:
                             json_data = loads(file.read())
                             
-                        new_event_loop().run_until_complete(start(session_file, json_data, choice(proxy_list)))
+                        print(f"Выбран файл сессии: {session_file[1]}")
+                        input("Для начала работы нажмите Enter")
+                        new_event_loop().run_until_complete(start(session_file, json_data, choice(proxy_list) if len(proxy_list) > 0 else None))
                         
                     else:
                         print(f"Файл .json от сессии {session_file[0]} не найден")
                          
+                    input("Что бы начать с начала Enter")
+                    
                 except:
                     pass
-            
+                
     except Exception as ex:
         print(f"({ex.__class__.__name__}) {ex}")
         
